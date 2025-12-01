@@ -1,0 +1,11 @@
+auth:
+  rootPassword: StrongRootPassword123
+  database: apidb
+  username: apiuser
+  password: ApiUserPass123
+
+primary:
+  persistence:
+    enabled: true
+    storageClass: local-path
+    size: 2Gi
