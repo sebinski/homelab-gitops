@@ -19,15 +19,15 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
-          env:
-            - name: DB_HOST
-              value: my-mariadb.database.svc.cluster.local
-            - name: DB_USER
-              value: apiuser
-            - name: DB_PASS
-              value: ApiUserPass123
-            - name: DB_NAME
-              value: apidb
+          envFrom:
+            - secretRef:
+                name: data-api-db
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            failureThreshold: 10
+            periodSeconds: 3
           livenessProbe:
             httpGet:
               path: /health
