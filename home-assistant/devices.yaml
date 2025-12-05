@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: home-assistant-devices
+  namespace: home-assistant
+data:
+  devices.yaml: |
+    # Example template sensors (modify or remove as needed)
+    # These are managed via UI or YAML once configured
+    
+    # To add real MQTT devices:
+    # 1. Ensure MQTT broker is running (we have one in MariaDB namespace)
+    # 2. Devices publish to homeassistant/<device>/<type>/<id>/config
+    # 3. Home Assistant auto-discovers them
+    
+    # Example: Wemo Smart Plug over HTTP
+    # REST sensor example (uncomment in configuration.yaml to use)
+    # rest:
+    #   - resource: http://192.168.1.50/cm?cmnd=STATUS%208
+    #     name: Wemo_Power
+    #     value_template: '{{ value_json.StatusSNS.ENERGY.Power }}'
+    
+    # Example: MQTT Light (e.g., smart LED strip)
+    # mqtt:
+    #   light:
+    #     - name: "Living Room LED"
+    #       command_topic: "home/living_room/led/command"
+    #       state_topic: "home/living_room/led/state"
+    #       brightness_command_topic: "home/living_room/led/brightness/command"
+    #       brightness_state_topic: "home/living_room/led/brightness/state"
+    #       payload_on: "ON"
+    #       payload_off: "OFF"
+    
+    # Example: MQTT Climate (e.g., smart thermostat)
+    # mqtt:
+    #   climate:
+    #     - name: "Living Room Climate"
+    #       current_temperature_topic: "home/living_room/temperature"
+    #       temperature_command_topic: "home/living_room/set_temperature"
+    #       modes: ["auto", "cool", "heat", "off"]
+    #       action_topic: "home/living_room/hvac_action"
+
+  integrations-guide.md: |
+    # Home Assistant Device Integration Guide
+    
+    ## Mobile App Integration
+    - **Status**: ✅ Enabled in configuration
+    - **Setup**: 
+      - Open the Home Assistant app on your phone
+      - Tap "Enter address manually"
+      - Enter `http://192.168.1.128`
+      - Log in with your HA credentials
+      - Device will auto-register for push notifications
+    
+    ## MQTT (Smart Home Devices)
+    - **Broker**: Configured to connect to MariaDB namespace at `my-mariadb.database.svc.cluster.local:1883`
+    - **Auto-Discovery**: Enabled via `homeassistant/<device>/<type>/<id>/config` topic
+    - **Setup Examples**:
+      - **Tasmota Devices**: Flash firmware, configure MQTT, devices auto-discover
+      - **Zigbee2MQTT Bridge**: Run Z2M with same MQTT broker
+      - **ESPHome Devices**: Compile with MQTT component
+    
+    ## Add Devices via UI
+    1. Navigate to **Settings > Devices & Services > Create Automation/Integration**
+    2. Search for device type (e.g., "Google Cast", "Sonos", "Philips Hue")
+    3. Follow on-screen setup
+    
+    ## Common Device Types
+    - **Smart Lights**: Philips Hue, LIFX, Tasmota, ESPHome
+    - **Climate**: Ecobee, Nest, Tado, Midea
+    - **Plugs/Switches**: TP-Link Kasa, Sonoff, Shelly
+    - **Media**: Chromecast, Sonos, Apple TV
+    - **Sensors**: MQTT, HTTP REST, local integrations
+    
+    ## Next Steps
+    - Install Home Assistant app on your phone
+    - Add a simple device (e.g., REST sensor or MQTT light)
+    - Create an automation in the UI

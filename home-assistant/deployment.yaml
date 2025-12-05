@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: home-assistant
+  namespace: home-assistant
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: home-assistant
+  template:
+    metadata:
+      labels:
+        app: home-assistant
+    spec:
+      serviceAccountName: home-assistant
+      containers:
+        - name: home-assistant
+          image: ghcr.io/home-assistant/home-assistant:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8123
+              name: http
+          volumeMounts:
+            - name: config
+              mountPath: /config
+            - name: config-yaml
+              mountPath: /config/configuration.yaml
+              subPath: configuration.yaml
+            - name: config-yaml
+              mountPath: /config/automations.yaml
+              subPath: automations.yaml
+            - name: config-yaml
+              mountPath: /config/scripts.yaml
+              subPath: scripts.yaml
+            - name: config-yaml
+              mountPath: /config/scenes.yaml
+              subPath: scenes.yaml
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 500m
+              memory: 1Gi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8123
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8123
+            initialDelaySeconds: 15
+            periodSeconds: 10
+      volumes:
+        - name: config
+          persistentVolumeClaim:
+            claimName: home-assistant-data
+        - name: config-yaml
+          configMap:
+            name: home-assistant-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: home-assistant
+  namespace: home-assistant
+spec:
+  selector:
+    app: home-assistant
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 8123
+  type: ClusterIP

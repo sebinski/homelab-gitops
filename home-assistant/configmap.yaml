@@ -1,0 +1,86 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: home-assistant-config
+  namespace: home-assistant
+data:
+  configuration.yaml: |
+    # Home Assistant configuration
+    homeassistant:
+      name: Home
+      latitude: 0
+      longitude: 0
+      elevation: 0
+      unit_system: metric
+      time_zone: UTC
+
+    # Logging
+    logger:
+      default: info
+
+    # HTTP configuration
+    http:
+      use_x_forwarded_for: true
+      trusted_proxies:
+        - 10.42.0.0/16
+      cors_allowed_origins:
+        - http://localhost:8123
+        - http://127.0.0.1:8123
+        - http://192.168.1.128
+    # URLs when behind reverse proxy
+    external_url: http://192.168.1.128
+    internal_url: http://home-assistant.home-assistant.svc.cluster.local:8123
+    server_port: 80
+    server_host: 0.0.0.0
+
+    # Enable frontend
+    frontend:
+
+    # Enable history
+    history:
+
+    # Enable logbook
+    logbook:
+
+    # System health
+    system_health:
+
+    # System log
+    system_log:
+
+    # Mobile app support
+    mobile_app:
+
+    # MQTT broker for smart home devices
+    mqtt:
+      broker: my-mariadb.database.svc.cluster.local
+      port: 1883
+      discovery: true
+      discovery_prefix: homeassistant
+
+    # Sensor integration for Shelly devices via REST
+    sensor:
+
+    # REST commands for Shelly device control
+    rest_command:
+
+    # Config editor
+    config:
+
+    # Automations editor
+    automation: !include automations.yaml
+
+    # Scripts editor
+    scripts: !include scripts.yaml
+
+    # Scenes
+    scene: !include scenes.yaml
+
+  automations.yaml: |
+    # Automations managed via UI
+
+  scripts.yaml: |
+    {}
+
+  scenes.yaml: |
+    # Scenes managed via UI
