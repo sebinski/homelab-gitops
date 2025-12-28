@@ -28,3 +28,4 @@ spec:
   stripPrefix:
     prefixes:
       - /minerals
+    forceSlash: false
