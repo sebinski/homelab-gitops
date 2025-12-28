@@ -28,9 +28,8 @@ data:
         - http://127.0.0.1:8123
         - http://192.168.1.128
         - http://192.168.1.128:8123
-      base_url: http://192.168.1.128/home-assistant
     # URLs when behind reverse proxy
-    external_url: http://192.168.1.128/home-assistant
+    external_url: http://192.168.1.128
     internal_url: http://home-assistant.home-assistant.svc.cluster.local:8123
     server_port: 80
     server_host: 0.0.0.0
