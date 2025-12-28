@@ -8,10 +8,9 @@ metadata:
     traefik.ingress.kubernetes.io/router.priority: "200"
 spec:
   rules:
-    - host: minerals.lan
-      http:
+    - http:
         paths:
-          - path: /
+          - path: /minerals
             pathType: Prefix
             backend:
               service:
