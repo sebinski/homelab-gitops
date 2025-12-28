@@ -6,6 +6,7 @@ metadata:
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web
     traefik.ingress.kubernetes.io/router.priority: "100"
+    traefik.ingress.kubernetes.io/router.middlewares: home-assistant-stripprefix@kubernetescrd
 spec:
   rules:
     - http:
@@ -17,3 +18,13 @@ spec:
                 name: home-assistant-root
                 port:
                   number: 80
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: stripprefix
+  namespace: home-assistant
+spec:
+  stripPrefix:
+    prefixes:
+      - /home-assistant

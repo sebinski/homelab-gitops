@@ -6,6 +6,7 @@ metadata:
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web
     traefik.ingress.kubernetes.io/router.priority: "200"
+    traefik.ingress.kubernetes.io/router.middlewares: mineral-museum-stripprefix@kubernetescrd
 spec:
   rules:
     - http:
@@ -17,3 +18,13 @@ spec:
                 name: directus
                 port:
                   number: 8055
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: stripprefix
+  namespace: mineral-museum
+spec:
+  stripPrefix:
+    prefixes:
+      - /minerals
