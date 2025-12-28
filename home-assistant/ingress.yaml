@@ -5,20 +5,10 @@ metadata:
   namespace: home-assistant
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web
-    traefik.ingress.kubernetes.io/router.priority: "100"
 spec:
   rules:
     - host: homeassistant.local
       http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: home-assistant-root
-                port:
-                  number: 80
-    - http:
         paths:
           - path: /
             pathType: Prefix

@@ -5,6 +5,7 @@ metadata:
   namespace: mineral-museum
   annotations:
     traefik.ingress.kubernetes.io/router.entrypoints: web
+    traefik.ingress.kubernetes.io/router.priority: "200"
 spec:
   rules:
     - host: minerals.lan
