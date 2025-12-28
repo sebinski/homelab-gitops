@@ -1,0 +1,40 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: home-assistant
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  
+  source:
+    repoURL: https://github.com/sebastiantansini/workspace.git
+    targetRevision: HEAD
+    path: homelab-gitops/home-assistant
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: home-assistant
+  
+  syncPolicy:
+    automated:
+      prune: true        # Automatically delete resources that are no longer in Git
+      selfHeal: true     # Automatically sync when cluster state differs from Git
+      allowEmpty: false  # Don't sync if the path is empty
+    
+    syncOptions:
+      - CreateNamespace=true  # Create namespace if it doesn't exist
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  
+  # Optional: Configure how often ArgoCD checks for changes
+  # Default is 3 minutes
+  revisionHistoryLimit: 10
