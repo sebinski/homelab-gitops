@@ -9,9 +9,9 @@ spec:
   project: default
   
   source:
-    repoURL: https://github.com/sebastiantansini/workspace.git
+    repoURL: https://github.com/sebinski/homelab-gitops.git
     targetRevision: HEAD
-    path: homelab-gitops/home-assistant
+    path: home-assistant
   
   destination:
     server: https://kubernetes.default.svc
