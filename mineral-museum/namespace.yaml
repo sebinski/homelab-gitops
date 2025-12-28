@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mineral-museum
+  labels:
+    name: mineral-museum
+    app: mineral-museum

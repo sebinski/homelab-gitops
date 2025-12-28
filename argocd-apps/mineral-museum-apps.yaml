@@ -1,0 +1,105 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mineral-museum-postgres
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  
+  source:
+    chart: postgresql
+    repoURL: https://charts.bitnami.com/bitnami
+    targetRevision: 15.5.32
+    helm:
+      valuesObject:
+        auth:
+          username: directus
+          password: directus_password_change_me
+          database: mineral_museum
+          postgresPassword: postgres_admin_password_change_me
+        
+        primary:
+          persistence:
+            enabled: true
+            storageClass: "local-path"
+            size: 5Gi
+          
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+        
+        metrics:
+          enabled: true
+          serviceMonitor:
+            enabled: false
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mineral-museum
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+    
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: mineral-museum-directus
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  
+  source:
+    repoURL: https://github.com/sebinski/homelab-gitops.git
+    targetRevision: HEAD
+    path: mineral-museum
+  
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: mineral-museum
+  
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    
+    syncOptions:
+      - CreateNamespace=true
+      - PrunePropagationPolicy=foreground
+      - PruneLast=true
+    
+    retry:
+      limit: 5
+      backoff:
+        duration: 5s
+        factor: 2
+        maxDuration: 3m
+  
+  # Ensure PostgreSQL is deployed first
+  ignoreDifferences:
+    - group: apps
+      kind: Deployment
+      jsonPointers:
+        - /spec/replicas

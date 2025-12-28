@@ -1,0 +1,163 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: directus
+  namespace: mineral-museum
+  labels:
+    app: directus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: directus
+  template:
+    metadata:
+      labels:
+        app: directus
+    spec:
+      containers:
+        - name: directus
+          image: directus/directus:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8055
+              name: http
+          env:
+            # Public URL
+            - name: PUBLIC_URL
+              value: "http://minerals.lan"
+            
+            # Admin credentials from secret
+            - name: ADMIN_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: directus-secrets
+                  key: ADMIN_EMAIL
+            - name: ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: directus-secrets
+                  key: ADMIN_PASSWORD
+            
+            # Encryption keys from secret
+            - name: KEY
+              valueFrom:
+                secretKeyRef:
+                  name: directus-secrets
+                  key: KEY
+            - name: SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: directus-secrets
+                  key: SECRET
+            
+            # Database configuration from secret
+            - name: DB_CLIENT
+              valueFrom:
+                secretKeyRef:
+                  name: directus-secrets
+                  key: DB_CLIENT
+            - name: DB_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: directus-secrets
+                  key: DB_HOST
+            - name: DB_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: directus-secrets
+                  key: DB_PORT
+            - name: DB_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: directus-secrets
+                  key: DB_DATABASE
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: directus-secrets
+                  key: DB_USER
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: directus-secrets
+                  key: DB_PASSWORD
+            
+            # File storage configuration
+            - name: STORAGE_LOCATIONS
+              value: "local"
+            - name: STORAGE_LOCAL_DRIVER
+              value: "local"
+            - name: STORAGE_LOCAL_ROOT
+              value: "./uploads"
+            
+            # Uploads configuration
+            - name: MAX_PAYLOAD_SIZE
+              value: "100mb"
+            - name: FILES_MAX_UPLOAD_SIZE
+              value: "100mb"
+            
+            # Rate limiting (disable for local use)
+            - name: RATE_LIMITER_ENABLED
+              value: "false"
+            
+            # CORS (allow all for local network)
+            - name: CORS_ENABLED
+              value: "true"
+            - name: CORS_ORIGIN
+              value: "true"
+          
+          volumeMounts:
+            - name: uploads
+              mountPath: /directus/uploads
+            - name: extensions
+              mountPath: /directus/extensions
+          
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          
+          livenessProbe:
+            httpGet:
+              path: /server/health
+              port: 8055
+            initialDelaySeconds: 60
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          
+          readinessProbe:
+            httpGet:
+              path: /server/health
+              port: 8055
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+      
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: directus-uploads
+        - name: extensions
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: directus
+  namespace: mineral-museum
+  labels:
+    app: directus
+spec:
+  type: ClusterIP
+  selector:
+    app: directus
+  ports:
+    - protocol: TCP
+      port: 8055
+      targetPort: 8055
+      name: http

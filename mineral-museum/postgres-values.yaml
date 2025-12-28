@@ -1,0 +1,32 @@
+# PostgreSQL Helm Chart Values for Mineral Museum
+# Bitnami PostgreSQL Chart
+
+auth:
+  username: directus
+  password: directus_password_change_me
+  database: mineral_museum
+  postgresPassword: postgres_admin_password_change_me
+
+primary:
+  persistence:
+    enabled: true
+    storageClass: "local-path"
+    size: 5Gi
+  
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Enable metrics for monitoring
+metrics:
+  enabled: true
+  serviceMonitor:
+    enabled: false
+
+# Backup configuration (optional)
+backup:
+  enabled: false
