@@ -12,33 +12,36 @@ A complete self-hosted solution for cataloging and managing a personal mineral c
 
 ```
 ┌─────────────────────────────────────────────┐
-│         Traefik Ingress                     │
-│         minerals.lan                        │
+│      Traefik Ingress (192.168.1.128)        │
 └───────────────┬─────────────────────────────┘
-                │
-                ▼
-┌───────────────────────────────────────────┐
-│         Directus CMS                      │
-│   (Admin UI + API + Asset Management)     │
-│         Port: 8055                        │
-└─────────┬─────────────────┬───────────────┘
-          │                 │
-          ▼                 ▼
-┌─────────────────┐  ┌──────────────────┐
-│   PostgreSQL    │  │  File Storage    │
-│   Database      │  │  (PVC 20GB)      │
-│   (Bitnami)     │  │  High-res Photos │
-└─────────────────┘  └──────────────────┘
+      │
+   ┌───────┴─────────┐
+   │                 │
+   ▼                 ▼
+┌─────────────────┐  ┌───────────────────────────┐
+│  Frontend       │  │         Directus CMS      │
+│  (Nginx static) │  │   (Admin UI + API)        │
+│  Path: /        │  │   Path: /minerals         │
+│  Port: 80       │  │   Port: 8055              │
+└─────────────────┘  └─────────┬─────────────────┘
+            │
+            ▼
+             ┌─────────────────┐
+             │   PostgreSQL    │
+             │   Database      │
+             │   (Bitnami)     │
+             └─────────────────┘
 ```
 
 ## 📦 Tech Stack
 
 - **Orchestration:** K3s (Kubernetes)
 - **GitOps:** ArgoCD (Continuous Delivery)
+- **Frontend:** Nginx serving static HTML/CSS/JavaScript
 - **Database:** PostgreSQL 15 (Bitnami Helm Chart)
 - **CMS:** Directus (Headless CMS with Admin UI)
 - **Storage:** Persistent Volume Claims (local-path)
-- **Ingress:** Traefik (minerals.lan)
+- **Ingress:** Traefik (IP: 192.168.1.128)
 
 ## 🚀 Deployment
 
@@ -47,7 +50,7 @@ A complete self-hosted solution for cataloging and managing a personal mineral c
 1. K3s cluster running
 2. ArgoCD installed and configured
 3. GitHub repository access configured in ArgoCD
-4. Local DNS or /etc/hosts entry for `minerals.lan`
+4. Network access to `192.168.1.128`
 
 ### Quick Start
 
@@ -73,50 +76,33 @@ kubectl apply -f argocd-apps/mineral-museum-apps.yaml
 kubectl get applications -n argocd -w
 ```
 
-4. **Configure local DNS:**
-```bash
-# Add to /etc/hosts on your computer
-echo "192.168.1.128 minerals.lan" | sudo tee -a /etc/hosts
-```
+4. **Access the application:**
+   - **Frontend:** http://192.168.1.128/
+   - **Add Minerals:** http://192.168.1.128/add.html
+   - **Directus Admin:** http://192.168.1.128/minerals/admin
+   - **API Endpoint:** http://192.168.1.128/minerals/items/minerals
 
-5. **Access Directus:**
-   - URL: http://minerals.lan
-   - Default credentials: See `secret.yaml`
+5. **Enable Public Access (required for frontend to read/create items):**
+   - Login to admin: http://192.168.1.128/minerals/admin
+   - Settings → Roles & Permissions → Public
+   - Enable **Read** + **Create** for the `minerals` collection
+   - Enable **Read** + **Create** for Directus **Files**
+   - Save changes
 
 ## 📊 Data Model: Mineral Collection
 
-### Collection Schema
+### Current Collection Schema
 
-The Directus data model for minerals includes:
+The frontend deployed in this repo expects a Directus collection named `minerals` with (at least) the following fields:
 
-**Collection Name:** `minerals`
-
-**Fields:**
-
-| Field Name | Type | Description | Required |
-|------------|------|-------------|----------|
-| `name` | String | Common name of the mineral | ✅ |
-| `scientific_name` | String | Scientific/mineralogical name | ✅ |
-| `photos` | File (Multiple) | High-resolution images | ✅ |
-| `mohs_hardness` | Decimal | Mohs hardness scale (1-10) | ❌ |
-| `color` | String | Primary color(s) | ❌ |
-| `origin_location` | String | Where the specimen was found | ❌ |
-| `acquisition_date` | Date | When acquired | ❌ |
-| `acquisition_source` | String | Where purchased/found | ❌ |
-| `weight_grams` | Decimal | Weight in grams | ❌ |
-| `dimensions` | String | Size (e.g., "5cm x 3cm x 2cm") | ❌ |
-| `crystal_system` | Dropdown | Crystal structure type | ❌ |
-| `chemical_formula` | String | Chemical composition | ❌ |
-| `luster` | Dropdown | Surface appearance | ❌ |
-| `transparency` | Dropdown | Transparent/translucent/opaque | ❌ |
-| `specific_gravity` | Decimal | Density measurement | ❌ |
-| `streak` | String | Streak color | ❌ |
-| `notes` | Text (Rich) | Additional observations | ❌ |
-| `tags` | Tags | Category tags | ❌ |
-| `featured` | Boolean | Highlight in gallery | ❌ |
-| `display_location` | String | Where stored/displayed | ❌ |
-
-### Dropdown Options
+| Field Name | Type | Notes |
+|------------|------|-------|
+| `Nome` | String | Mineral name |
+| `Foto` | File | Single image asset ID |
+| `Dimensioni` | String | e.g. "15x20" |
+| `Peso` | Decimal/String | Weight in grams |
+| `Data_acquisizione` | Date | Acquisition date |
+| `Note` | Text | Free-form notes |
 
 **Crystal System:**
 - Cubic
@@ -145,11 +131,11 @@ The Directus data model for minerals includes:
 
 ### Step 1: Create the Minerals Collection
 
-1. Log into Directus (http://minerals.lan)
+1. Log into Directus (http://192.168.1.128/minerals/admin)
 2. Go to **Settings** → **Data Model**
 3. Click **Create Collection**
 4. Name: `minerals`
-5. Add all fields from the schema above
+5. Add the fields from the schema above (or adjust existing fields to match)
 
 ### Step 2: Configure Gallery View
 
@@ -157,9 +143,8 @@ The Directus data model for minerals includes:
 2. Click **Layout Options** (top right)
 3. Select **Cards** layout
 4. Configure:
-   - **Image Source:** `photos`
-   - **Title:** `name`
-   - **Subtitle:** `scientific_name`
+   - **Image Source:** `Foto`
+   - **Title:** `Nome`
    - **Image Fit:** Cover
    - **Size:** Large
 
@@ -322,7 +307,7 @@ kubectl logs -n mineral-museum -l app=directus
 # 3. Database connection failed - verify credentials
 ```
 
-### Can't access minerals.lan
+### Can't access the app (ingress)
 ```bash
 # Check ingress
 kubectl get ingress -n mineral-museum
@@ -356,12 +341,12 @@ kubectl exec -it -n mineral-museum mineral-museum-postgresql-0 -- \
 
 ### Adding a New Mineral
 
-1. Go to http://minerals.lan
+1. Go to http://192.168.1.128/minerals/admin
 2. Click **Minerals** in the sidebar
 3. Click **Create Item** (+)
 4. Fill in the form:
    - Upload photos (drag & drop)
-   - Enter name and scientific name
+   - Enter the mineral name
    - Fill in any known details
 5. Click **Save**
 

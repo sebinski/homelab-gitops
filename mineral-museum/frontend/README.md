@@ -25,12 +25,18 @@ Login to Directus admin (`http://192.168.1.128/minerals/admin`) and:
 
 ### 2. Serve the Frontend
 
+This repo deploys the frontend via Kubernetes + ArgoCD (served at `http://192.168.1.128/`).
+The options below are useful for local testing.
+
 #### Option A: Simple Python Server
 ```bash
 cd /home/stansini/workspace/homelab-gitops/mineral-museum/frontend
 python3 -m http.server 8080
 ```
 Then open: `http://localhost:8080`
+
+Note: when serving locally from `localhost`, the frontend needs to call Directus using the full URL:
+- `http://192.168.1.128/minerals` (not just `/minerals`)
 
 #### Option B: Nginx/Apache
 Copy the files to your web server's document root.
@@ -48,6 +54,8 @@ Create a simple nginx deployment to serve these static files.
 If your Directus URL is different, update the `API_URL` in:
 - `app.js` (line 2)
 - `add.js` (line 2)
+
+When deployed behind the cluster ingress, `API_URL` should be `/minerals`.
 
 ## Collection Structure
 

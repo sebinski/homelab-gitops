@@ -3,17 +3,21 @@
 ## Project Status: ✅ DEPLOYED & RUNNING
 
 ### Access
-- **URL:** http://minerals.lan (after adding to /etc/hosts)
+- **Frontend:** http://192.168.1.128/
+- **Add Minerals:** http://192.168.1.128/add.html
+- **Directus Admin:** http://192.168.1.128/minerals/admin
+- **API Endpoint:** http://192.168.1.128/minerals/items/minerals
 - **Server IP:** 192.168.1.128
-- **Default Login:** admin@minerals.lan / ChangeThisPassword123!
+- **Credentials:** Set in `secret.yaml`
 
 ### Infrastructure Components
 
 | Component | Status | Details |
 |-----------|--------|---------|
+| **Frontend** | ✅ Running | Nginx static frontend served at `/` |
 | **PostgreSQL** | ✅ Running | Bitnami chart 18.1.13, 5GB storage |
 | **Directus CMS** | ✅ Running | Latest image, 20GB upload storage |
-| **Ingress** | ✅ Configured | Traefik at minerals.lan |
+| **Ingress** | ✅ Configured | Traefik at 192.168.1.128 (`/` frontend, `/minerals` Directus) |
 | **ArgoCD** | ✅ Synced | Auto-deploy from Git |
 
 ### Storage Volumes
@@ -36,12 +40,17 @@ Both configured with auto-sync and self-heal enabled.
 homelab-gitops/
 ├── mineral-museum/
 │   ├── README.md                   # Complete documentation
+│   ├── QUICKSTART.md              # Quick reference
+│   ├── FRONTEND-DEPLOYMENT.md     # Frontend setup guide
 │   ├── namespace.yaml              # Kubernetes namespace
 │   ├── secret.yaml                 # Credentials (change defaults!)
 │   ├── pvc.yaml                    # Storage definitions
 │   ├── postgres-values.yaml        # DB configuration
 │   ├── directus-deployment.yaml    # CMS deployment
-│   └── ingress.yaml               # Traefik routing
+│   ├── ingress.yaml               # Traefik routing
+│   ├── frontend-configmap.yaml    # Frontend files (HTML/CSS/JS)
+│   ├── frontend-deployment.yaml   # Nginx deployment
+│   └── frontend/                  # Frontend source files
 │
 └── argocd-apps/
     └── mineral-museum-apps.yaml   # ArgoCD applications
@@ -56,17 +65,26 @@ kubectl get pods -n mineral-museum
 # Check applications
 kubectl get applications -n argocd | grep mineral
 
+# View frontend logs
+kubectl logs -n mineral-museum -l app=frontend -f
+
 # View Directus logs
 kubectl logs -n mineral-museum -l app=directus -f
 
 # Restart Directus
 kubectl rollout restart deployment/directus -n mineral-museum
 
+# Restart frontend (after ConfigMap changes)
+kubectl rollout restart deployment/frontend -n mineral-museum
+
 # Access PostgreSQL
 kubectl port-forward -n mineral-museum svc/mineral-museum-postgres-postgresql 5432:5432
 
 # Check storage usage
 kubectl get pvc -n mineral-museum
+
+# Test API endpoint
+curl http://192.168.1.128/minerals/items/minerals
 ```
 
 ### Data Model Highlights
@@ -74,15 +92,12 @@ kubectl get pvc -n mineral-museum
 **Collection Name:** `minerals`
 
 **Key Fields:**
-- Photos (multiple files) - High-resolution images
-- Name & Scientific Name
-- Mohs Hardness Scale (1-10)
-- Origin Location
-- Color, Crystal System, Luster
-- Acquisition Date & Source
-- Physical properties (weight, dimensions, etc.)
-- Rich text notes
-- Tags for categorization
+- `Nome` - Mineral name
+- `Foto` - Single photo (asset)
+- `Dimensioni` - e.g. "15x20"
+- `Peso` - Weight in grams
+- `Data_acquisizione` - Acquisition date
+- `Note` - Notes
 
 **UI Layouts:**
 - **Gallery View:** Card layout with photo thumbnails
@@ -101,13 +116,10 @@ kubectl get pvc -n mineral-museum
 ### For Your Girlfriend (Non-Technical User)
 
 **To Add a New Mineral:**
-1. Go to http://minerals.lan
-2. Log in with the password you set
-3. Click "Minerals" in the sidebar
-4. Click the "+" button
-5. Drag & drop photos
-6. Fill in the details you know
-7. Click "Save"
+1. Go to http://192.168.1.128/add.html
+2. Fill in the form (Nome is required)
+3. Optionally upload a photo
+4. Click "Salva Minerale"
 
 **To Browse Your Collection:**
 1. Click "Minerals" in the sidebar
@@ -142,8 +154,8 @@ df -h /var/lib/rancher/k3s/storage/
 
 ### Troubleshooting
 
-**Can't access minerals.lan?**
-- Verify /etc/hosts entry exists
+**Can't access the app?**
+- Use the IP directly: http://192.168.1.128/
 - Check ingress: `kubectl get ingress -n mineral-museum`
 - Test direct access: `kubectl port-forward -n mineral-museum svc/directus 8055:8055`
 
