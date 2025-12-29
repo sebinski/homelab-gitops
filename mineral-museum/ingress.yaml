@@ -8,16 +8,9 @@ metadata:
     traefik.ingress.kubernetes.io/router.priority: "200"
 spec:
   rules:
-    - http:
+    - host: minerals.lan
+      http:
         paths:
-          # Directus API and Admin (higher priority, strip /minerals prefix)
-          - path: /minerals
-            pathType: Prefix
-            backend:
-              service:
-                name: directus
-                port:
-                  number: 8055
           # Frontend (root path for mineral museum)
           - path: /
             pathType: Prefix
