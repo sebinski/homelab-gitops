@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Museo dei Minerali</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>🪨 Museo dei Minerali</h1>
+        <nav>
+            <a href="index.html" class="active">Collezione</a>
+            <a href="add.html">Aggiungi Minerale</a>
+        </nav>
+    </header>
+
+    <main>
+        <div id="loading">Caricamento...</div>
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div id="minerals-grid" class="minerals-grid">
+            <!-- Minerals will be loaded here -->
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
