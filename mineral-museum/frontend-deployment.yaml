@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: mineral-museum
+  labels:
+    app: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine
+          ports:
+            - containerPort: 80
+              name: http
+          volumeMounts:
+            - name: html
+              mountPath: /usr/share/nginx/html
+              readOnly: true
+            - name: css
+              mountPath: /usr/share/nginx/html/styles.css
+              subPath: styles.css
+              readOnly: true
+            - name: js
+              mountPath: /usr/share/nginx/html/app.js
+              subPath: app.js
+              readOnly: true
+            - name: js
+              mountPath: /usr/share/nginx/html/add.js
+              subPath: add.js
+              readOnly: true
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+      volumes:
+        - name: html
+          configMap:
+            name: frontend-html
+        - name: css
+          configMap:
+            name: frontend-css
+        - name: js
+          configMap:
+            name: frontend-js
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: mineral-museum
+  labels:
+    app: frontend
+spec:
+  type: ClusterIP
+  selector:
+    app: frontend
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+      name: http

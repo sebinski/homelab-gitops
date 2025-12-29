@@ -1,0 +1,181 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-js
+  namespace: mineral-museum
+data:
+  app.js: |
+    // Configuration
+    const API_URL = '/minerals';
+    const COLLECTION = 'minerals';
+
+    // Load minerals on page load
+    document.addEventListener('DOMContentLoaded', loadMinerals);
+
+    async function loadMinerals() {
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const grid = document.getElementById('minerals-grid');
+
+        try {
+            // Fetch minerals from Directus
+            const response = await fetch(`${API_URL}/items/${COLLECTION}`);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            
+            // Hide loading
+            loading.style.display = 'none';
+            
+            // Display minerals
+            if (data.data && data.data.length > 0) {
+                grid.innerHTML = data.data.map(mineral => createMineralCard(mineral)).join('');
+            } else {
+                grid.innerHTML = '<p style="color: white; text-align: center; width: 100%;">Nessun minerale trovato. <a href="add.html" style="color: #ffd700;">Aggiungi il primo!</a></p>';
+            }
+            
+        } catch (err) {
+            console.error('Error loading minerals:', err);
+            loading.style.display = 'none';
+            error.style.display = 'block';
+            error.textContent = `Errore nel caricamento: ${err.message}`;
+        }
+    }
+
+    function createMineralCard(mineral) {
+        const imageUrl = mineral.Foto 
+            ? `${API_URL}/assets/${mineral.Foto}?width=400&height=300&fit=cover`
+            : '';
+        
+        const dateFormatted = mineral.Data_acquisizione 
+            ? new Date(mineral.Data_acquisizione).toLocaleDateString('it-IT')
+            : 'N/A';
+        
+        return `
+            <div class="mineral-card">
+                ${imageUrl ? `<img src="${imageUrl}" alt="${mineral.Nome}" class="mineral-image">` : '<div class="mineral-image"></div>'}
+                <div class="mineral-info">
+                    <div class="mineral-name">${mineral.Nome || 'Senza nome'}</div>
+                    
+                    ${mineral.Dimensioni ? `<div class="mineral-detail"><strong>Dimensioni:</strong> ${mineral.Dimensioni}</div>` : ''}
+                    
+                    ${mineral.Peso ? `<div class="mineral-detail"><strong>Peso:</strong> ${parseFloat(mineral.Peso).toFixed(2)}g</div>` : ''}
+                    
+                    <div class="mineral-detail"><strong>Data acquisizione:</strong> ${dateFormatted}</div>
+                    
+                    ${mineral.Note ? `<div class="mineral-notes">${mineral.Note}</div>` : ''}
+                </div>
+            </div>
+        `;
+    }
+
+  add.js: |
+    // Configuration
+    const API_URL = '/minerals';
+    const COLLECTION = 'minerals';
+
+    // Photo preview
+    document.getElementById('foto').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('preview-img').src = e.target.result;
+                document.getElementById('photo-preview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Form submission
+    document.getElementById('mineral-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const messageEl = document.getElementById('message');
+        const errorEl = document.getElementById('error');
+        const submitBtn = e.target.querySelector('button[type="submit"]');
+        
+        // Hide previous messages
+        messageEl.style.display = 'none';
+        errorEl.style.display = 'none';
+        
+        // Disable submit button
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Salvataggio...';
+        
+        try {
+            let fotoId = null;
+            
+            // Upload photo first if present
+            const fotoFile = document.getElementById('foto').files[0];
+            if (fotoFile) {
+                fotoId = await uploadPhoto(fotoFile);
+            }
+            
+            // Prepare mineral data
+            const mineralData = {
+                Nome: document.getElementById('nome').value,
+                Dimensioni: document.getElementById('dimensioni').value || null,
+                Peso: document.getElementById('peso').value ? parseFloat(document.getElementById('peso').value) : null,
+                Data_acquisizione: document.getElementById('data_acquisizione').value || null,
+                Note: document.getElementById('note').value || null,
+                Foto: fotoId
+            };
+            
+            // Create mineral item
+            const response = await fetch(`${API_URL}/items/${COLLECTION}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(mineralData)
+            });
+            
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.errors?.[0]?.message || 'Errore nel salvataggio');
+            }
+            
+            // Success
+            messageEl.style.display = 'block';
+            messageEl.textContent = '✓ Minerale aggiunto con successo!';
+            
+            // Reset form
+            document.getElementById('mineral-form').reset();
+            document.getElementById('photo-preview').style.display = 'none';
+            
+            // Redirect after 2 seconds
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 2000);
+            
+        } catch (err) {
+            console.error('Error saving mineral:', err);
+            errorEl.style.display = 'block';
+            errorEl.textContent = `Errore: ${err.message}`;
+            
+            // Re-enable submit button
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Salva Minerale';
+        }
+    });
+
+    async function uploadPhoto(file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        
+        const response = await fetch(`${API_URL}/files`, {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (!response.ok) {
+            throw new Error('Errore nel caricamento della foto');
+        }
+        
+        const data = await response.json();
+        return data.data.id;
+    }

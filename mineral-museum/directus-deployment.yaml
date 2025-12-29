@@ -106,6 +106,10 @@ spec:
               value: "true"
             - name: CORS_ORIGIN
               value: "true"
+            
+            # Enable public role for unauthenticated access
+            - name: PUBLIC_ENABLED
+              value: "true"
           
           volumeMounts:
             - name: uploads
